@@ -1,0 +1,79 @@
+services:
+
+  tic-tac-toe:
+    build:
+      context: ./games/tic-tac-toe
+    image: game-factory/tic-tac-toe:1.0
+    container_name: tic-tac-toe
+    restart: unless-stopped
+
+    networks:
+      - game-network
+
+    expose:
+      - "5000"
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+
+  snake:
+    build:
+      context: ./games/snake
+    image: game-factory/snake:1.0
+    container_name: snake
+    restart: unless-stopped
+
+    networks:
+      - game-network
+
+    expose:
+      - "5000"
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+
+  nginx:
+    build:
+      context: ./nginx
+    image: game-factory/nginx:1.0
+    container_name: game-factory-nginx
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+
+    networks:
+      - game-network
+
+    depends_on:
+      tic-tac-toe:
+        condition: service_healthy
+      snake:
+        condition: service_healthy
+
+
+networks:
+  game-network:
+    driver: bridge
